@@ -1,0 +1,784 @@
+# Example YAML to get you started quickly.
+# Be aware that YAML has indentation based scoping.
+# Code completion support is available so start typing for available options.
+swagger: '2.0'
+
+# This is your document metadata
+info:
+  version: "0.0.1"
+  title: Experience API
+  description:
+    Based on https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Data.md#parttwo
+
+    All strings MUST be encoded and interpreted as UTF-8.
+
+host: localhost
+consumes:
+  - application/json
+produces:
+  - application/json
+
+# Describe your paths here
+paths:
+  # This is a path endpoint. Change it.
+  /statements:
+    put:
+      summary: Stores a single Statement with the given id. POST can also be used to store single Statements.
+      description:
+        Stores a single `Statement` with the given id. POST can also be used to store single Statements.
+      parameters:
+        - name: method
+          in: query
+          type: string
+          description: a MUST
+          default: PUT
+          required: true
+        - name: statementId
+          type: string
+          in: query
+          description: Id of Statement to record
+          required: true
+        - name: content
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Statement'
+      responses:
+        "204":
+          description:
+            Default response
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+        "409":
+          description:
+            If the LRS receives a Statement with an id it already has a Statement for, it SHOULD verify the received Statement matches the existing one and SHOULD return 409 Conflict if they do not match. See Statement comparison requirements.
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+        "400":
+          description:
+            If the LRS receives a batch of Statements containing two or more Statements with the same id, it SHOULD* reject the batch and return 400 Bad Request.
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    post:
+      summary: Stores a Statement, or a set of Statements.
+      description:
+        Stores a Statement, or a set of Statements. An array of Statements or a single Statement to be stored.
+      parameters:
+        - name: content
+          in: body
+          required: true
+          schema:
+            type: array
+            $ref: '#/definitions/Statement'
+      responses:
+        "200":
+          description:
+            Array of Statement id(s) (UUID) in the same order as the corresponding stored Statements.
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+          schema:
+            type: array
+            items:
+              type: string
+              description:
+                Array of Statement id(s) (UUID) in the same order as the corresponding stored Statements.
+        "409":
+          description:
+            If the LRS receives a Statement with an id it already has a Statement for, it SHOULD verify the received Statement matches the existing one and SHOULD return 409 Conflict if they do not match. See Statement comparison requirements.
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+        "400":
+          description:
+            If the LRS receives a batch of Statements containing two or more Statements with the same id, it SHOULD* reject the batch and return 400 Bad Request.
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    get:
+      summary: This method is called to fetch a single Statement or multiple Statements. If the statementId or voidedStatementId parameter is specified a single Statement is returned.
+      description:
+        Otherwise it returns A `StatementResult` Object, a list of `Statements` in reverse chronological order based on stored time, subject to permissions and maximum list length. If additional results are available, an IRL to retrieve them will be included in the `StatementResult` Object.
+      parameters:
+        - name: statementId
+          in: query
+          type: string
+          description: If the statementId or voidedStatementId parameter is specified a single Statement is returned.
+        - name: voidedStatementId
+          in: query
+          type: string
+          description: If the statementId or voidedStatementId parameter is specified a single Statement is returned.
+      responses:
+        "200":
+          description: Returns a Statement or Statement Result
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+          schema:
+            enum:
+              - $ref: '#/definitions/Statement'
+              - $ref: '#/definitions/StatementResult'
+        "400":
+          description:
+            The LRS MUST reject with a 400 Bad Request error any requests to this resource which contain both statementId and voidedStatementId parameters
+            The LRS MUST reject with an 400 Bad Request error any requests to this resource which contain statementId or voidedStatementId parameters, and also contain any other parameter besides "attachments" or "format".
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+  /activities/state:
+    put:
+      summary: The document to be stored or updated.
+      description: Stores, changes, fetches, or deletes the document specified by the given "stateId" that exists in the context of the specified Activity, Agent, and registration (if specified).
+      parameters:
+        - name: activityId
+          in: query
+          type: string
+          required: true
+          description: The Activity id associated with this state.
+        - name: agent
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Agent'
+        - name: registration
+          in: query
+          type: string
+          description: The registration associated with this state.
+        - name: stateId
+          in: query
+          required: true
+          type: string
+          description: The id for this state, within the given context.
+      responses:
+        204:
+          description: No Content (and the State document)
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    post:
+      summary: The document to be stored or updated.
+      description: Stores, changes, fetches, or deletes the document specified by the given "stateId" that exists in the context of the specified Activity, Agent, and registration (if specified).
+      parameters:
+        - name: activityId
+          in: query
+          type: string
+          required: true
+          description: The Activity id associated with this state.
+        - name: agent
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Agent'
+        - name: registration
+          in: query
+          type: string
+          description: The registration associated with this state.
+        - name: stateId
+          in: query
+          required: true
+          type: string
+          description: The id for this state, within the given context.
+      responses:
+        204:
+          description: No Content (and the State document)
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    delete:
+      summary: The document to be stored or updated.
+      description: Stores, changes, fetches, or deletes the document specified by the given "stateId" that exists in the context of the specified Activity, Agent, and registration (if specified).
+      parameters:
+        - name: activityId
+          in: query
+          type: string
+          required: true
+          description: The Activity id associated with this state.
+        - name: agent
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Agent'
+        - name: registration
+          in: query
+          type: string
+          description: The registration associated with this state.
+        - name: stateId
+          in: query
+          required: true
+          type: string
+          description: The id for this state, within the given context.
+      responses:
+        204:
+          description: No Content (and the State document)
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    get:
+      summary: Fetches state document or document ids if multiple
+      parameters:
+        - name: activityId
+          in: query
+          type: string
+          required: true
+          description: The Activity id associated with this state.
+        - name: agent
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Agent'
+        - name: registration
+          in: query
+          type: string
+          description: The registration associated with this state.
+        - name: stateId
+          in: query
+          required: true
+          type: string
+          description: The id for this state, within the given context.
+        - name: since
+          in: query
+          type: string
+          format: date-time
+          description: Only ids of states stored since the specified Timestamp (exclusive) are returned.
+      responses:
+        200:
+          description: OK (returns the state document if it is a single request; returns an array of state ids if multiple)
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+  /activities:
+    get:
+      summary: Loads the complete Activity Object specified.
+      parameters:
+        - name: activityId
+          in: query
+          type: string
+          description: The id associated with the Activities to load.
+          required: true
+      responses:
+        200:
+          description: Loads the complete Activity Object specified.
+          schema:
+            $ref: '#/definitions/Activity'
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+  /agents/profile:
+    put:
+      summary: Stores or changes the specified Profile document in the context of the specified Agent.
+      description: The Agent Profile Resource is much like the State Resource, allowing for arbitrary key / document pairs to be saved which are related to an Agent.
+      parameters:
+        - name: agent
+          type: string
+          in: query
+          required: true
+          description: The Agent object (JSON) associated with this Profile document.
+        - name: profileId
+          in: query
+          type: string
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    post:
+      summary: Stores or changes the specified Profile document in the context of the specified Agent.
+      description: The Agent Profile Resource is much like the State Resource, allowing for arbitrary key / document pairs to be saved which are related to an Agent.
+      parameters:
+        - name: agent
+          type: string
+          in: query
+          required: true
+          description: The Agent object (JSON) associated with this Profile document.
+        - name: profileId
+          in: query
+          type: string
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    delete:
+      summary: Deletes the specified Profile document in the context of the specified Agent.
+      description: The Agent Profile Resource is much like the State Resource, allowing for arbitrary key / document pairs to be saved which are related to an Agent.
+      parameters:
+        - name: agent
+          type: string
+          in: query
+          required: true
+          description: The Agent object (JSON) associated with this Profile document.
+        - name: profileId
+          in: query
+          type: string
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    get:
+      summary: Fetches the specified Profile document in the context of the specified Agent.
+      description: The Agent Profile Resource is much like the State Resource, allowing for arbitrary key / document pairs to be saved which are related to an Agent.
+      parameters:
+        - name: agent
+          type: string
+          in: query
+          required: true
+          description: The Agent object (JSON) associated with this Profile document.
+        - name: profileId
+          in: query
+          type: string
+          required: true
+          description: The profile id associated with this Profile document.
+        - name: since
+          in: query
+          type: string
+          format: date-time
+          description: Only ids of Profiles stored since the specified Timestamp (exclusive) are returned.
+      responses:
+        200:
+          description: Returns the Profile document (or an Array of Profile id(s))
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+  /activities/profile:
+    put:
+      summary: Stores or changes the specified Profile document in the context of the specified Activity.
+      parameters:
+        - name: activityId
+          type: string
+          in: query
+          required: true
+          description: The Activity id associated with this Profile document.
+        - name: profileId
+          type: string
+          in: query
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    post:
+      summary: Stores or changes the specified Profile document in the context of the specified Activity.
+      parameters:
+        - name: activityId
+          type: string
+          in: query
+          required: true
+          description: The Activity id associated with this Profile document.
+        - name: profileId
+          type: string
+          in: query
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    delete:
+      summary: Deletes the specified Profile document in the context of the specified Activity
+      parameters:
+        - name: activityId
+          type: string
+          in: query
+          required: true
+          description: The Activity id associated with this Profile document.
+        - name: profileId
+          type: string
+          in: query
+          required: true
+          description: The profile id associated with this Profile document.
+      responses:
+        204:
+          description: Returns No Content
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+    get:
+      summary: Fetches the specified Profile document in the context of the specified Activity
+      parameters:
+        - name: activityId
+          type: string
+          in: query
+          required: true
+          description: The Activity id associated with this Profile document.
+        - name: profileId
+          type: string
+          in: query
+          required: true
+          description: The profile id associated with this Profile document.
+        - name: since
+          in: query
+          type: string
+          format: date-time
+          description: Only ids of Profile documents stored since the specified Timestamp (exclusive) are returned.
+      responses:
+        200:
+          description: Returns the Profile document (or an Array of Profile id(s))
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+  /about:
+    get:
+      summary: Returns JSON Object containing information about this LRS, including the xAPI version supported.
+      parameters:
+        - name: version
+          in: query
+          required: true
+          description: Array of version strings (xAPI versions) this LRS supports
+          type: array
+          items:
+            type: string
+        - name: extensions
+          in: query
+          type: string
+          description: A map of other properties as needed
+      responses:
+        200:
+          description: OK
+          headers:
+            X-Experience-API-Consistent-Through:
+              type: string
+              format: date-time
+              description: The LRS MUST include the header "X-Experience-API-Consistent-Through" on all responses to Statements Resource requests.
+
+definitions:
+  Statement:
+    type: object
+    required:
+      - id
+      - actor
+      - verb
+      - object
+    properties:
+      id: #recommended
+        type: string
+      actor: #required
+        type: object
+        description:
+          Whom the Statement is about, as an Agent or Group Object.
+        enum:
+          - $ref: '#/definitions/Agent'
+          - $ref: '#/definitions/Group'
+      verb: #required
+        type: object
+        description:
+          Action taken by the Actor.
+      object: #required
+        type: object
+        description:
+          Activity, Agent, or another Statement that is the Object of the Statement.
+        enum:
+          - $ref: '#/definitions/Activity'
+          - $ref: '#/definitions/Agent'
+          - $ref: '#/definitions/Statement'
+      result:
+        $ref: '#/definitions/Result'
+      context:
+        type: object
+      timestamp:
+        type: string
+      stored:
+        type: string
+      authority:
+        type: object
+      version:
+        type: string
+      attachments:
+        type: array
+        items:
+          $ref: '#/definitions/Attachment'
+
+  StatementResult:
+    type: object
+    properties:
+      statementId:
+        type: string
+        description: Id of Statement to fetch
+      voidedStatementId:
+        type: string
+        description: Id of voided Statement to fetch. see Voided Statements
+      agent:
+        type: object
+        enum:
+          - $ref: '#/definitions/Agent'
+          - $ref: '#/definitions/Group'
+        description: Filter, only return Statements for which the specified Agent or Group is the Actor or Object of the Statement
+      verb:
+        type: string
+        description: Filter, only return Statements matching the specified Verb id.
+      activity:
+        type: string
+        description: Filter, only return Statements for which the Object of the Statement is an Activity with the specified id.
+      registration:
+        type: string
+        description: Filter, only return Statements matching the specified registration id. Note that although frequently a unique registration will be used for one Actor assigned to one Activity, this cannot be assumed. If only Statements for a certain Actor or Activity are required, those parameters also need to be specified.
+      related_activities:
+        type: boolean
+        default: false
+        description: Apply the Activity filter broadly. Include Statements for which the Object, any of the context Activities, or any of those properties in a contained SubStatement match the Activity parameter, instead of that parameter's normal behavior. Matching is defined in the same way it is for the "activity" parameter.
+      related_agents:
+        type: boolean
+        default: false
+        description:  Apply the Agent filter broadly. Include Statements for which the Actor, Object, Authority, Instructor, Team, or any of these properties in a contained SubStatement match the Agent parameter, instead of that parameter's normal behavior. Matching is defined in the same way it is for the "agent" parameter.
+      since:
+        type: string
+        format: date-time
+        description: Only Statements stored since the specified Timestamp (exclusive) are returned.
+      until:
+        type: string
+        format: date-time
+        description: Only Statements stored at or before the specified Timestamp are returned.
+      limit:
+        type: integer
+        default: 0
+        description: Maximum number of Statements to return. 0 indicates return the maximum the server will allow.
+      format:
+        type: string
+        default: exact
+        enum:
+          - ids
+          - exact
+          - canonical
+      attachments:
+        type: boolean
+        default: false
+        description: If true, the LRS uses the multipart response format and includes all attachments as described previously. If false, the LRS sends the prescribed response with Content-Type application/json and does not send attachment data.
+      ascending:
+        type: boolean
+        default: false
+        description: If true, return results in ascending order of stored time
+
+  Group:
+    type: object
+
+  Agent:
+    type: object
+    properties:
+      objectType: #optional
+        type: string
+      name: #optional
+        type: string
+
+  Person:
+    type: object
+    required:
+      - objectType
+    properties:
+      objectType:
+        type: string
+        default: "Person"
+      name:
+        type: array
+        items:
+          type: string
+          description: List of names of Agents retrieved.
+      mbox:
+        type: array
+        items:
+          type: string
+          description: List of e-mail addresses of Agents retrieved.
+      mbox_sha1sum:
+        type: array
+        items:
+          type: string
+          description: List of the SHA1 hashes of mailto IRIs (such as go in an mbox property).
+      openid*:
+        type: array
+        items:
+          type: string
+          description: List of openids that uniquely identify the Agents retrieved.
+      account*:
+        type: array
+        items:
+          $ref: '#/definitions/Account'
+
+  Account:
+    type: object
+    required:
+      - homePage
+      - name
+    properties:
+      homePage: #required
+        type: string
+      name: #required
+        type: string
+
+  Verb:
+    type: object
+    required:
+      - id
+    properties:
+      id: #required
+        type: string
+      display: #recommended
+        type: object
+        description:
+          The human readable representation of the Verb in one or more languages. This does not have any impact on the meaning of the Statement, but serves to give a human-readable display of the meaning already determined by the chosen Verb.
+    example:
+      id: "http://example.com/xapi/verbs#defenestrated"
+      display: {
+        "en-US":"defenestrated",
+        "es" : "defenestrado"}
+
+  Activity:
+    type: object
+    properties:
+      name: #recommended
+        type: object
+      description: #recommended
+        type: object
+      type: #recommended
+        type: object
+      moreInfo: #optional
+        type: object
+      extensions: #optional
+        type: object
+
+  StatementReference:
+    type: object
+    required:
+      - objectType
+      - id
+    properties:
+      objectType: #required
+        type: string
+      id: #required
+        type: string
+
+  Result:
+    type: object
+    properties:
+      score: #optional
+        $ref: '#/definitions/Score'
+      success: #optional
+        type: boolean
+      completion: #optional
+        type: boolean
+      response: #optional
+        type: string
+      duration: #optional
+        type: string
+      extensions: #optional
+        type: object
+
+  Score:
+    type: object
+    properties:
+      scaled:
+        type: number
+      raw:
+        type: number
+      min:
+        type: number
+      max:
+        type: number
+
+  Context:
+    type: object
+    properties:
+      registration:
+        type: string
+      instructor:
+        $ref: '#/definitions/Agent'
+      team:
+        type: object
+      contextActivities:
+        type: object
+      revision:
+        type: string
+      platform:
+        type: string
+      language:
+        type: string
+      statement:
+        $ref: '#/definitions/Statement'
+      extensions:
+        type: object
+
+  Attachment:
+    type: object
+    required:
+      - usageType
+      - display
+      - contentType
+      - length
+      - sha2
+    properties:
+      usageType:
+        type: string
+      display:
+        type: object
+      description:
+        type: object
+      contentType:
+        type: string
+      length:
+        type: integer
+      sha2:
+        type: string
+      fileUrl:
+        type: string
