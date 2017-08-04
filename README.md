@@ -12,7 +12,10 @@ The aim of this implementation is to save you time in generating a RESTful APi t
 
 ## How
 1) By using this implementation and [Swagger](https://swagger.io/), you will be able to quickly generate a new project and create your RESTful APi that is conformant to [xApi Spec](https://github.com/adlnet/xAPI-Spec). 
-2) Then, you will be able to save some money if you need to have an internal LRS, low on funds, or just for experimentation. There will be no need to rely on external resources as long as this spec is kept up to date with [xApi Spec](https://github.com/adlnet/xAPI-Spec). 
+2) Then, you will be able to save some money if you need to have an internal LRS, low on funds, or just for experimentation. There will be no need to rely on external resources as long as this spec is kept up to date with [xApi Spec](https://github.com/adlnet/xAPI-Spec).
+
+## Other Swagger Project
+[TryxAPI/xapi-swagger](https://github.com/TryxAPI/xapi-swagger) - updated 2 years ago with 1.0.2 (vs. 1.0.3 current)
 
 ## Note
 This is meant to be complimentary to the various [current](https://adopters.adlnet.gov/) [solutions](https://experienceapi.com/adopters/). There are obvious benefits in purchasing the off-the-shelf products. However, since this is a specification... there shouldn't be much drastic change once implemented.
